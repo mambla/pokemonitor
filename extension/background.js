@@ -1,13 +1,6 @@
-const BACKEND_URL = 'http://127.0.0.1:3847';
-const HEALTH_CHECK_INTERVAL_MIN = 1;
 const MAX_PARSED_POSTS = 500;
 const MAX_RECENT_ALERTS = 50;
 const TAB_GROUP_NAME = 'PokeMonitor';
-
-const MODE_PARSE_ONLY = 'parse_only';
-const MODE_FULL = 'full';
-
-let backendConnected = false;
 
 // --- Initialization ---
 
@@ -20,14 +13,11 @@ chrome.runtime.onInstalled.addListener(() => {
         seenPostIds: [],
         parsedPosts: [],
         recentAlerts: [],
-        backendConnected: false,
-        mode: MODE_PARSE_ONLY,
         nightMode: 'auto',
         tabGroupId: null,
       });
     }
   });
-  chrome.alarms.create('healthCheck', { periodInMinutes: HEALTH_CHECK_INTERVAL_MIN });
   openAllMonitoredTabs();
   chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
 });
@@ -58,9 +48,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'REMOVE_GROUP') {
     removeGroup(msg.groupId).then(sendResponse);
     return true;
-  }
-  if (msg.type === 'SET_MODE') {
-    chrome.storage.local.set({ mode: msg.mode });
   }
   if (msg.type === 'CLEAR_POSTS') {
     chrome.storage.local.set({ parsedPosts: [], seenPostIds: [], recentAlerts: [] });
@@ -787,22 +774,7 @@ async function getFullState() {
   return data;
 }
 
-// --- Health check ---
-
-async function checkHealth() {
-  try {
-    const resp = await fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(5000) });
-    backendConnected = resp.ok;
-  } catch {
-    backendConnected = false;
-  }
-  await chrome.storage.local.set({ backendConnected });
-}
-
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'healthCheck') {
-    checkHealth();
-  }
   if (alarm.name.startsWith('refresh:')) {
     const groupId = alarm.name.slice('refresh:'.length);
     refreshOneTab(groupId);
@@ -869,5 +841,4 @@ async function scheduleAllRefreshes() {
   }
 }
 
-checkHealth();
 scheduleAllRefreshes();
