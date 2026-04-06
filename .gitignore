@@ -1,0 +1,9 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.db
+.env
+facebook.html
+uv.lock
+package-lock.json

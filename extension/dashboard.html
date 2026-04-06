@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PokeMonitor</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1>PokeMonitor</h1>
+    </div>
+    <div class="header-right">
+      <label class="night-toggle" title="When on, tabs refresh every 30m instead of 2m">
+        <input type="checkbox" id="nightModeToggle">
+        <span>Night mode</span>
+      </label>
+      <button id="clearBtn" class="btn btn-small">Clear Log</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="sidebar">
+      <div class="sidebar-section">
+        <h2>Monitored Groups</h2>
+        <div id="groupsList"></div>
+        <p id="noGroups" class="empty" hidden>No groups yet</p>
+      </div>
+      <div class="sidebar-section add-group">
+        <input id="groupUrlInput" type="text" placeholder="Paste Facebook group URL...">
+        <button id="addGroupBtn" class="btn btn-primary">Add</button>
+      </div>
+      <div class="sidebar-section">
+        <h2>Claude API Key</h2>
+        <div class="api-key-row">
+          <input id="apiKeyInput" type="password" placeholder="sk-ant-...">
+          <button id="saveKeyBtn" class="btn btn-primary">Save</button>
+        </div>
+        <p class="hint" id="keyStatus"></p>
+      </div>
+      <div class="sidebar-section">
+        <h2>AI Prompt</h2>
+        <textarea id="promptInput" rows="12" placeholder="System prompt for AI analysis..."></textarea>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button id="savePromptBtn" class="btn btn-primary">Save</button>
+          <button id="testPromptBtn" class="btn btn-small" style="border:1px solid #ddd;color:#333">Test</button>
+        </div>
+        <p class="hint" id="promptStatus"></p>
+        <pre id="promptResult" class="test-result" hidden></pre>
+      </div>
+      <div class="sidebar-section">
+        <h2>Telegram</h2>
+        <input id="tgBotToken" type="password" placeholder="Bot token">
+        <input id="tgChatId" type="text" placeholder="Chat ID" style="margin-top:6px">
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button id="saveTgBtn" class="btn btn-primary">Save</button>
+          <button id="testTgBtn" class="btn btn-small" style="border:1px solid #ddd;color:#333">Test</button>
+        </div>
+        <p class="hint" id="tgStatus"></p>
+      </div>
+    </aside>
+
+    <main id="mainContent">
+      <div id="latestSection">
+        <h2>Latest per Group</h2>
+        <div id="latestPosts" class="post-grid"></div>
+      </div>
+
+      <div id="logSection">
+        <h2>Post Log <span id="postCount" class="count"></span></h2>
+        <div id="postLog" class="post-list"></div>
+        <p id="noPostsMsg" class="empty" hidden>No posts parsed yet. Add a group to start monitoring.</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
