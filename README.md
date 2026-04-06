@@ -37,7 +37,7 @@ All fields are optional. Without an API key you still get browser notifications 
 
 - Parses posts from live Facebook group DOM without making extra HTTP requests
 - Manages its own browser tabs in a collapsed Chrome tab group
-- Auto-refreshes tabs every 2 min (day) or 30 min (1-8 AM Israel time)
+- Auto-refreshes tabs every 2 min (day) or 30 min (1-8 AM local time)
 - Sends up to 10 images per post to Telegram as file uploads (no Facebook URLs leaked)
 - Claude vision analyzes card images for names, sets, conditions, grading, prices
 - Deduplicates posts across tab reloads and extension restarts

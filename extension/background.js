@@ -568,7 +568,7 @@ function formatTelegramCaption(post, analysis) {
 
   const postText = post.text || '';
   const timeStr = post.estimatedTime
-    ? new Date(post.estimatedTime).toLocaleString('en-IL', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+    ? new Date(post.estimatedTime).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
     : post.timeLabel || '';
   const lines = [`📢 NEW POST — ${group}`];
   if (timeStr) lines.push(`🕐 ${timeStr}`);
@@ -788,10 +788,9 @@ const REFRESH_NIGHT_JITTER_MIN = 5;
 const NIGHT_START_HOUR = 1;
 const NIGHT_END_HOUR = 8;
 
-function isNightInIsrael() {
-  const now = new Date();
-  const israelHour = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' })).getHours();
-  return israelHour >= NIGHT_START_HOUR && israelHour < NIGHT_END_HOUR;
+function isNightLocally() {
+  const hour = new Date().getHours();
+  return hour >= NIGHT_START_HOUR && hour < NIGHT_END_HOUR;
 }
 
 async function getRefreshDelayMin() {
@@ -803,7 +802,7 @@ async function getRefreshDelayMin() {
   } else if (nightMode === 'force_day') {
     useNight = false;
   } else {
-    useNight = isNightInIsrael();
+    useNight = isNightLocally();
   }
 
   const base = useNight ? REFRESH_NIGHT_MIN : REFRESH_NORMAL_MIN;
