@@ -413,6 +413,26 @@ chrome.notifications.onClicked.addListener(async (notifId) => {
   chrome.notifications.clear(notifId);
 });
 
+// --- JSON extraction ---
+
+function extractJson(raw) {
+  raw = raw.trim();
+  if (raw.startsWith('```')) {
+    raw = raw.split('\n').slice(1).join('\n');
+    if (raw.endsWith('```')) raw = raw.slice(0, -3);
+  }
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start !== -1 && end > start) {
+    raw = raw.substring(start, end + 1);
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { summary: raw };
+  }
+}
+
 // --- Client-side AI analysis (Claude) ---
 
 const DEFAULT_PROMPT = `You are a Pokemon trading card expert. Analyze Facebook group posts selling or trading Pokemon cards.
@@ -510,20 +530,10 @@ async function analyzeClientSide(post, apiKey) {
     }
 
     const data = await resp.json();
-    let raw = (data.content?.[0]?.text || '').trim();
+    const raw = (data.content?.[0]?.text || '').trim();
     if (!raw) return null;
 
-    if (raw.startsWith('```')) {
-      raw = raw.split('\n').slice(1).join('\n');
-      if (raw.endsWith('```')) raw = raw.slice(0, -3);
-    }
-
-    let analysis;
-    try {
-      analysis = JSON.parse(raw);
-    } catch {
-      analysis = { summary: raw };
-    }
+    const analysis = extractJson(raw);
 
     const summary = analysis.summary || 'Analyzed';
     notifyAiResult(post, analysis);
@@ -722,20 +732,10 @@ async function testPrompt(prompt, postId) {
     }
 
     const data = await resp.json();
-    let raw = (data.content?.[0]?.text || '').trim();
+    const raw = (data.content?.[0]?.text || '').trim();
     if (!raw) return { error: 'Empty response from Claude' };
 
-    if (raw.startsWith('```')) {
-      raw = raw.split('\n').slice(1).join('\n');
-      if (raw.endsWith('```')) raw = raw.slice(0, -3);
-    }
-
-    let analysis;
-    try {
-      analysis = JSON.parse(raw);
-    } catch {
-      analysis = { summary: raw };
-    }
+    const analysis = extractJson(raw);
 
     let telegramSent = false;
     if (telegramBotToken && telegramChatId) {
