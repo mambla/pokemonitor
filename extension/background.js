@@ -5,7 +5,7 @@ const TAB_GROUP_NAME = 'PokeMonitor';
 // --- Initialization ---
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get(['monitoredGroups'], (result) => {
+  chrome.storage.local.get(['monitoredGroups', 'sentPostIds', 'seenPostIds'], (result) => {
     if (!result.monitoredGroups) {
       chrome.storage.local.set({
         monitoredGroups: [],
@@ -17,6 +17,8 @@ chrome.runtime.onInstalled.addListener(() => {
         nightMode: 'auto',
         tabGroupId: null,
       });
+    } else if (!result.sentPostIds && result.seenPostIds) {
+      chrome.storage.local.set({ sentPostIds: [...result.seenPostIds] });
     }
   });
   openAllMonitoredTabs();
