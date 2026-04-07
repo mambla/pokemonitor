@@ -11,6 +11,7 @@ chrome.runtime.onInstalled.addListener(() => {
         monitoredGroups: [],
         managedTabs: {},
         seenPostIds: [],
+        sentPostIds: [],
         parsedPosts: [],
         recentAlerts: [],
         nightMode: 'auto',
@@ -50,7 +51,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
   if (msg.type === 'CLEAR_POSTS') {
-    chrome.storage.local.set({ parsedPosts: [], seenPostIds: [], recentAlerts: [] });
+    chrome.storage.local.set({ parsedPosts: [], seenPostIds: [], sentPostIds: [], recentAlerts: [] });
   }
   if (msg.type === 'SET_NIGHT_MODE') {
     chrome.storage.local.set({ nightMode: msg.nightMode });
@@ -259,44 +260,63 @@ async function removeGroup(groupId) {
 // --- Post handling ---
 
 async function handleNewPosts(posts, tab) {
-  const { seenPostIds = [], monitoredGroups = [] } = await chrome.storage.local.get(['seenPostIds', 'monitoredGroups']);
+  const { seenPostIds = [], sentPostIds = [], monitoredGroups = [] } =
+    await chrome.storage.local.get(['seenPostIds', 'sentPostIds', 'monitoredGroups']);
   const monitoredIds = new Set(monitoredGroups.map(g => g.groupId));
   const seenSet = new Set(seenPostIds);
-  const truly_new = posts.filter(p => !seenSet.has(p.postId) && monitoredIds.has(p.groupId));
+  const sentSet = new Set(sentPostIds);
 
-  if (truly_new.length === 0) return;
+  const relevant = posts.filter(p => monitoredIds.has(p.groupId));
+  if (relevant.length === 0) return;
 
-  for (const id of truly_new.map(p => p.postId)) {
-    seenSet.add(id);
-  }
+  const truly_new = relevant.filter(p => !seenSet.has(p.postId));
+  const unsent = relevant.filter(p => !sentSet.has(p.postId));
+
+  if (truly_new.length === 0 && unsent.length === 0) return;
+
+  for (const p of relevant) seenSet.add(p.postId);
   await chrome.storage.local.set({ seenPostIds: [...seenSet] });
 
-  await storeParsedPosts(truly_new);
-  await storeFullPosts(truly_new);
+  if (truly_new.length > 0) {
+    await storeParsedPosts(truly_new);
+    await storeFullPosts(truly_new);
 
-  if (truly_new[0]?.groupName && truly_new[0]?.groupId) {
-    const { monitoredGroups = [] } = await chrome.storage.local.get('monitoredGroups');
-    const grp = monitoredGroups.find(g => g.groupId === truly_new[0].groupId);
-    if (grp && !grp.name) {
-      grp.name = cleanGroupName(truly_new[0].groupName);
-      await chrome.storage.local.set({ monitoredGroups });
+    const grpPost = truly_new.find(p => p.groupName && p.groupId);
+    if (grpPost) {
+      const { monitoredGroups: groups = [] } = await chrome.storage.local.get('monitoredGroups');
+      const grp = groups.find(g => g.groupId === grpPost.groupId);
+      if (grp && !grp.name) {
+        grp.name = cleanGroupName(grpPost.groupName);
+        await chrome.storage.local.set({ monitoredGroups: groups });
+      }
+    }
+
+    for (const post of truly_new) {
+      notifyNewPost(post);
     }
   }
 
-  for (const post of truly_new) {
-    notifyNewPost(post);
-  }
+  if (unsent.length > 0) {
+    unsent.sort((a, b) => (a.estimatedTime || 0) - (b.estimatedTime || 0));
 
-  const { apiKey, telegramBotToken, telegramChatId } =
-    await chrome.storage.local.get(['apiKey', 'telegramBotToken', 'telegramChatId']);
+    const { apiKey, telegramBotToken, telegramChatId } =
+      await chrome.storage.local.get(['apiKey', 'telegramBotToken', 'telegramChatId']);
 
-  for (const post of truly_new) {
-    let analysis = null;
-    if (apiKey) {
-      analysis = await analyzeClientSide(post, apiKey);
-    }
-    if (telegramBotToken && telegramChatId) {
-      await sendTelegram(post, analysis, telegramBotToken, telegramChatId);
+    for (const post of unsent) {
+      let analysis = null;
+      if (apiKey) {
+        analysis = await analyzeClientSide(post, apiKey);
+      }
+      if (telegramBotToken && telegramChatId) {
+        const ok = await sendTelegram(post, analysis, telegramBotToken, telegramChatId);
+        if (ok) {
+          sentSet.add(post.postId);
+          await chrome.storage.local.set({ sentPostIds: [...sentSet] });
+        }
+      } else {
+        sentSet.add(post.postId);
+        await chrome.storage.local.set({ sentPostIds: [...sentSet] });
+      }
     }
   }
 }
@@ -559,6 +579,7 @@ async function sendTelegram(post, analysis, token, chatId) {
   }
 
   await logAlert(post, ok ? 'telegram' : 'tg_error', ok ? 'Sent' : 'Failed');
+  return ok;
 }
 
 function formatTelegramCaption(post, analysis) {
@@ -567,9 +588,11 @@ function formatTelegramCaption(post, analysis) {
   const link = post.postLink || '';
 
   const postText = post.text || '';
-  const timeStr = post.estimatedTime
+  const absTime = post.estimatedTime
     ? new Date(post.estimatedTime).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
-    : post.timeLabel || '';
+    : '';
+  const relTime = post.timeLabel || '';
+  const timeStr = relTime && absTime ? `${relTime} (${absTime})` : relTime || absTime;
   const lines = [`📢 NEW POST — ${group}`];
   if (timeStr) lines.push(`🕐 ${timeStr}`);
   lines.push(`👤 ${author}`);
