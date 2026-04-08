@@ -262,8 +262,18 @@ async function removeGroup(groupId) {
 // --- Post handling ---
 
 async function handleNewPosts(posts, tab) {
-  const { seenPostIds = [], sentPostIds = [], monitoredGroups = [] } =
-    await chrome.storage.local.get(['seenPostIds', 'sentPostIds', 'monitoredGroups']);
+  const { seenPostIds = [], sentPostIds = [], monitoredGroups = [], managedTabs = {} } =
+    await chrome.storage.local.get(['seenPostIds', 'sentPostIds', 'monitoredGroups', 'managedTabs']);
+
+  // Facebook may redirect numeric group IDs to text slugs, so the DOM slug
+  // can differ from the stored groupId. Use the managed tab mapping as truth.
+  if (tab?.id) {
+    const storedId = Object.entries(managedTabs).find(([, tid]) => tid === tab.id)?.[0];
+    if (storedId) {
+      for (const p of posts) p.groupId = storedId;
+    }
+  }
+
   const monitoredIds = new Set(monitoredGroups.map(g => g.groupId));
   const seenSet = new Set(seenPostIds);
   const sentSet = new Set(sentPostIds);
