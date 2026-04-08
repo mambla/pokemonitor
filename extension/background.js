@@ -565,7 +565,8 @@ function notifyAiResult(post, analysis) {
   const cards = (analysis.items || analysis.cards || []).map(c => c.name).filter(Boolean).join(', ');
   const price = analysis.price ? ` - ${analysis.price} ${analysis.currency || ''}`.trim() : '';
   const summary = analysis.summary || '';
-  const title = `${post.groupName || 'Analysis'}`;
+  const timeAgo = post.timeLabel ? ` (${post.timeLabel})` : '';
+  const title = `${post.groupName || 'Analysis'}${timeAgo}`;
   const message = cards
     ? `${cards}${price}\n${summary}`
     : summary || `${post.author}: new listing`;
