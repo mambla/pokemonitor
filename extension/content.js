@@ -43,8 +43,8 @@
   }
 
   function nudgeScroll() {
-    window.scrollBy(0, 600);
-    setTimeout(() => window.scrollTo(0, 0), 1500);
+    const distance = 400 + Math.random() * 400;
+    window.scrollBy({ top: distance, behavior: 'smooth' });
   }
 
   const observer = new MutationObserver(debouncedScan);
@@ -52,7 +52,7 @@
   intervalId = setInterval(scan, SCAN_INTERVAL_MS);
 
   scan();
-  setTimeout(nudgeScroll, 3000);
+  setTimeout(nudgeScroll, 2000 + Math.random() * 3000);
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'GET_TAB_INFO') {
