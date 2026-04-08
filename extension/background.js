@@ -398,7 +398,8 @@ async function logAlert(post, status, detail) {
 // --- Notifications ---
 
 function notifyNewPost(post) {
-  const title = `${post.groupName || 'New Post'}`;
+  const timeAgo = post.timeLabel ? ` (${post.timeLabel})` : '';
+  const title = `${post.groupName || 'New Post'}${timeAgo}`;
   const text = post.author
     ? `${post.author}: ${(post.text || '(images)').substring(0, 80)}`
     : (post.text || '(new post)').substring(0, 100);
