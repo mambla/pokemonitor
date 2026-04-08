@@ -303,8 +303,11 @@ async function handleNewPosts(posts, tab) {
       }
     }
 
+    const sixHoursAgo = Date.now() - 6 * 3600000;
     for (const post of truly_new) {
-      notifyNewPost(post);
+      if (!post.estimatedTime || post.estimatedTime > sixHoursAgo) {
+        notifyNewPost(post);
+      }
     }
   }
 
