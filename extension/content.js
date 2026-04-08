@@ -42,11 +42,17 @@
     debounceTimer = setTimeout(scan, DEBOUNCE_MS);
   }
 
+  function nudgeScroll() {
+    window.scrollBy(0, 600);
+    setTimeout(() => window.scrollTo(0, 0), 1500);
+  }
+
   const observer = new MutationObserver(debouncedScan);
   observer.observe(document.body, { childList: true, subtree: true });
   intervalId = setInterval(scan, SCAN_INTERVAL_MS);
 
   scan();
+  setTimeout(nudgeScroll, 3000);
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'GET_TAB_INFO') {
