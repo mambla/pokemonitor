@@ -571,7 +571,10 @@ function notifyAiResult(post, analysis) {
     ? `${cards}${price}\n${summary}`
     : summary || `${post.author}: new listing`;
 
-  chrome.notifications.create(`ai:${post.postId}`, {
+  const sixHoursAgo = Date.now() - 6 * 3600000;
+  if (post.estimatedTime && post.estimatedTime <= sixHoursAgo) return;
+
+  chrome.notifications.create(`post:${post.postId}`, {
     type: 'basic',
     iconUrl: 'icons/icon128.png',
     title,
