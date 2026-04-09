@@ -43,7 +43,7 @@
   }
 
   function nudgeScroll() {
-    const distance = 400 + Math.random() * 400;
+    const distance = 800 + Math.random() * 800;
     window.scrollBy({ top: distance, behavior: 'smooth' });
   }
 
